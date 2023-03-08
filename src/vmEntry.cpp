@@ -174,19 +174,18 @@ bool VM::init(JavaVM* vm, bool attach) {
     capabilities.can_retransform_classes = 1;
     capabilities.can_retransform_any_class = isOpenJ9() ? 0 : 1;
     capabilities.can_generate_vm_object_alloc_events = isOpenJ9() ? 1 : 0;
-    capabilities.can_generate_sampled_object_alloc_events = _can_sample_objects ? 1 : 0;
+//    capabilities.can_generate_sampled_object_alloc_events = _can_sample_objects ? 1 : 0;
     capabilities.can_get_bytecodes = 1;
     capabilities.can_get_constant_pool = 1;
     capabilities.can_get_source_file_name = 1;
     capabilities.can_get_line_numbers = 1;
     capabilities.can_generate_compiled_method_load_events = 1;
     capabilities.can_generate_monitor_events = 1;
-    capabilities.can_generate_garbage_collection_events = 1;
     capabilities.can_tag_objects = 1;
     if (_jvmti->AddCapabilities(&capabilities) != 0) {
         _can_sample_objects = false;
-        capabilities.can_generate_sampled_object_alloc_events = 0;
-        _jvmti->AddCapabilities(&capabilities);
+//        capabilities.can_generate_sampled_object_alloc_events = 0;
+//        _jvmti->AddCapabilities(&capabilities);
     }
 
     jvmtiEventCallbacks callbacks = {0};
@@ -202,8 +201,7 @@ bool VM::init(JavaVM* vm, bool attach) {
     callbacks.MonitorContendedEnter = LockTracer::MonitorContendedEnter;
     callbacks.MonitorContendedEntered = LockTracer::MonitorContendedEntered;
     callbacks.VMObjectAlloc = J9ObjectSampler::VMObjectAlloc;
-    callbacks.SampledObjectAlloc = ObjectSampler::SampledObjectAlloc;
-    callbacks.GarbageCollectionStart = ObjectSampler::GarbageCollectionStart;
+//    callbacks.SampledObjectAlloc = ObjectSampler::SampledObjectAlloc;
     _jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
 
     _jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);

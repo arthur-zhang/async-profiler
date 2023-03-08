@@ -35,6 +35,7 @@ const long MIN_INTERVAL = 100000;
 
 long WallClock::_interval;
 bool WallClock::_sample_idle_threads;
+bool WallClock::_sample_only_main_thread;
 
 ThreadState WallClock::getThreadState(void* ucontext) {
     StackFrame frame(ucontext);
@@ -77,6 +78,9 @@ Error WallClock::start(Arguments& args) {
 
     _sample_idle_threads = strcmp(args._event, EVENT_WALL) == 0;
 
+    // todo
+    _sample_only_main_thread = true;
+
     // Increase default interval for wall clock mode due to larger number of sampled threads
     _interval = args._interval ? args._interval : (_sample_idle_threads ? DEFAULT_INTERVAL * 5 : DEFAULT_INTERVAL);
 
@@ -96,14 +100,53 @@ void WallClock::stop() {
     pthread_kill(_thread, WAKEUP_SIGNAL);
     pthread_join(_thread, NULL);
 }
+class FakeThreadList : public ThreadList {
+private:
+    int _thread_index;
+    int _main_tid;
+    unsigned int _thread_count;
+
+public:
+    FakeThreadList() {
+        _thread_index = -1;
+        _main_tid = Profiler::instance()->getMainThreadId();
+    }
+
+    ~FakeThreadList() {
+        rewind();
+    }
+
+    void rewind() {
+        _thread_index = -1;
+        _main_tid = Profiler::instance()->getMainThreadId();
+    }
+
+    int next() {
+        if (_thread_index < 0) {
+            int ret = _main_tid;
+            _thread_index++;
+            return ret;
+        }
+        return -1;
+    }
+
+    int size() {
+        return 1;
+    }
+};
 
 void WallClock::timerLoop() {
+    std::cout << "timer loop" << std::endl;
     int self = OS::threadId();
     ThreadFilter* thread_filter = Profiler::instance()->threadFilter();
     bool thread_filter_enabled = thread_filter->enabled();
     bool sample_idle_threads = _sample_idle_threads;
-
+    bool sample_only_main_thread = _sample_only_main_thread;
+    std::cout << "sample: " << sample_only_main_thread << std::endl;
     ThreadList* thread_list = OS::listThreads();
+    if (sample_only_main_thread) {
+        thread_list = new FakeThreadList();
+    }
     long long next_cycle_time = OS::nanotime();
 
     while (_running) {
@@ -111,8 +154,9 @@ void WallClock::timerLoop() {
             OS::sleep(_interval);
             continue;
         }
-
-        if (sample_idle_threads) {
+        if (sample_only_main_thread) {
+            next_cycle_time += adjustInterval(_interval, 1);
+        } else if (sample_idle_threads) {
             // Try to keep the wall clock interval stable, regardless of the number of profiled threads
             int estimated_thread_count = thread_filter_enabled ? thread_filter->size() : thread_list->size();
             next_cycle_time += adjustInterval(_interval, estimated_thread_count);

@@ -195,17 +195,13 @@ Error ObjectSampler::start(Arguments& args) {
     initLiveRefs(args._live);
 
     jvmtiEnv* jvmti = VM::jvmti();
-    jvmti->SetHeapSamplingInterval(_interval);
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL);
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL);
+//    jvmti->SetHeapSamplingInterval(_interval);
+//    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL);
 
     return Error::OK;
 }
 
 void ObjectSampler::stop() {
     jvmtiEnv* jvmti = VM::jvmti();
-    jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL);
-    jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL);
-
-    dumpLiveRefs();
+//    jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL);
 }

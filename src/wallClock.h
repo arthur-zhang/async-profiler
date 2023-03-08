@@ -28,6 +28,7 @@ class WallClock : public Engine {
   private:
     static long _interval;
     static bool _sample_idle_threads;
+    static bool _sample_only_main_thread;
 
     volatile bool _running;
     pthread_t _thread;

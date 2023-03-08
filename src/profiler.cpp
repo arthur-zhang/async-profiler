@@ -136,6 +136,12 @@ void Profiler::addRuntimeStub(const void* address, int length, const char* name)
 }
 
 void Profiler::onThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
+
+//    std::cout << "onThreadStart:" << OS::threadId() << ":" << _main_thread_id << std::endl;
+    if (_main_thread_id < 0) {
+        _main_thread_id = OS::threadId();
+        std::cout << "setting main thread id" << _main_thread_id << std::endl;
+    }
     if (_thread_filter.enabled()) {
         _thread_filter.remove(OS::threadId());
     }
